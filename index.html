@@ -1,26 +1,46 @@
-<div id="letter-display"></div>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="yandex-verification" content="8c4e65b015b0ab0b" />
+  <title>Генератор русских букв для игры в слова</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
+    #letter { font-size: 120px; font-weight: bold; color: #333; transition: color 0.2s; }
+    button { padding: 16px 32px; font-size: 18px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 8px; }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>Генератор русских букв для игры в слова</h1>
+  <div id="letter">?</div>
+  <button id="generateBtn" onclick="startAnimation()">Сгенерировать букву</button>
 
-<script>
-  async function showLetters() {
-    const display = document.getElementById('letter-display');
-    const count = 10;
-    const delay = 300; 
-    const targetLetter = 'A'; 
+  <script>
+    const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
+    const letterDisplay = document.getElementById('letter');
+    const btn = document.getElementById('generateBtn');
 
-    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    async function startAnimation() {
+      btn.disabled = true;
+      letterDisplay.textContent = '';
 
-    display.textContent = '';
+      const count = 10;
+      const delay = 200;
+      const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-    for (let i = 0; i < count; i++) {
-      const randomLetter = String.fromCharCode(65 + Math.floor(Math.random() * 26));
-      
-      display.textContent = randomLetter;
+      for (let i = 0; i < count; i++) {
+        const randomIndex = Math.floor(Math.random() * letters.length);
+        letterDisplay.textContent = letters[randomIndex];
+        await wait(delay);
+      }
 
-      await wait(delay);
+      const finalIndex = Math.floor(Math.random() * letters.length);
+      letterDisplay.textContent = letters[finalIndex];
+
+      btn.disabled = false;
     }
-
-    display.textContent = targetLetter;
-  }
-
-  document.addEventListener('DOMContentLoaded', showLetters);
-</script>
+  </script>
+</body>
+</html>
