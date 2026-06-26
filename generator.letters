@@ -2,27 +2,253 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Генератор русской буквы</title>
-  <meta name="yandex-verification" content="8c4e65b015b0ab0b" />
+  <title>Генератор букв</title>
   <style>
-    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; background: #f5f5f5; }
-    #letter { font-size: 120px; font-weight: bold; color: #333; }
-    button { padding: 16px 32px; font-size: 18px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 8px; }
-    button:hover { background: #0056b3; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #eafaf1;
+      transition: background-color 0.3s;
+      position: relative;
+      cursor: default;
+    }
+
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    label {
+      font-size: 40px;
+      font-weight: bold;
+      color: #27ae60;
+    }
+
+    select {
+      padding: 20px 60px;
+      font-size: 40px;
+      border-radius: 8px;
+      border: 2px solid #ccc;
+      cursor: pointer;
+    }
+
+    h1 {
+      color: #27ae60;
+      margin-top: -100px;
+      margin-bottom: 40px;
+    }
+
+    #letter {
+      font-size: 300px;
+      font-weight: bold;
+      color: #2ecc71;
+      margin: 20px 0;
+    }
+
+    button.main-btn {
+      padding: 50px 100px;
+      font-size: 50px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button.main-btn:hover {
+      background-color: #219150;
+    }
+
+    button.main-btn:disabled {
+      background-color: #95a5a6;
+    }
+
+    button.word-count-btn {
+      padding: 50px 100px;
+      font-size: 50px;
+      background-color: white;
+      color: #27ae60;
+      border: 2px solid #27ae60;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    button.word-count-btn:hover:not(:disabled) {
+      background-color: #f0f0f0;
+    }
+
+    button.word-count-btn:disabled {
+      background-color: #e0e0e0;
+      color: #888;
+      border-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    #message {
+      font-size: 40px;       
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      color: #333;
+    }
+
+    #timer {
+      font-size: 60px;
+      font-weight: bold;
+      color: #c0392b;
+      margin-top: 15px;
+      display: none;
+    }
+
+    #stop-message {
+      position: fixed;
+      top: 150px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+      font-size: 70px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
-  <h1>Случайная русская буква</h1>
+
+  <div class="controls">
+    <label for="timerSelect">Длительность таймера:</label>
+    <select id="timerSelect">
+      <option value="5">5 сек</option>
+      <option value="20">20 сек</option>
+      <option value="30" selected>30 сек</option>
+      <option value="60">60 сек</option>
+    </select>
+  </div>
+
+  <div id="stop-message">СТОП</div>
+  <h1>Игра в слова</h1>
   <div id="letter">?</div>
-  <button onclick="generateLetter()">Сгенерировать</button>
+  <button id="btn" class="main-btn" onclick="startGen()">Сгенерировать букву</button>
+  
+  <button id="wordCountBtn" class="word-count-btn" style="display: none;" onclick="incrementWordCount()">Сказанных слов: 0</button>
+
+  <div id="message"></div>
+  <div id="timer"></div>
 
   <script>
-    const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ'.split('');
-    function generateLetter() {
-      const randomIndex = Math.floor(Math.random() * letters.length);
-      document.getElementById('letter').textContent = letters[randomIndex];
+    let timerInterval;
+    let stopTimeout;
+    let wordCount = 0;
+    let isCountingEnabled = false; 
+
+    function updateWordCountButton() {
+      const btn = document.getElementById('wordCountBtn');
+      btn.textContent = 'Сказанных слов: ' + wordCount;
+    }
+
+    function incrementWordCount() {
+      if (!isCountingEnabled) return;
+      wordCount++;
+      updateWordCountButton();
+    }
+
+document.body.addEventListener('click', (e) => {
+      if (e.target.closest('#wordCountBtn')) return;
+
+      incrementWordCount();
+    });
+
+    async function startGen() {
+      const btn = document.getElementById('btn');
+      const display = document.getElementById('letter');
+      const messageBox = document.getElementById('message');
+      const timerBox = document.getElementById('timer');
+      const stopMsg = document.getElementById('stop-message');
+      const wordCountBtn = document.getElementById('wordCountBtn');
+      const timerSelect = document.getElementById('timerSelect');
+      
+      const seconds = parseInt(timerSelect.value, 10);
+      const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
+
+      btn.disabled = true;
+      messageBox.textContent = '';
+      timerBox.style.display = 'none';
+      timerBox.textContent = '';
+      stopMsg.style.display = 'none';
+      document.body.style.backgroundColor = '#eafaf1';
+      clearInterval(timerInterval);
+      clearTimeout(stopTimeout);
+
+      wordCount = 0;
+      updateWordCountButton();
+
+      for (let i = 0; i < 8; i++) {
+        const rand = Math.floor(Math.random() * letters.length);
+        display.textContent = letters[rand];
+        await new Promise(r => setTimeout(r, 100));
+      }
+
+      const finalIndex = Math.floor(Math.random() * letters.length);
+      const finalLetter = letters[finalIndex];
+      display.textContent = finalLetter;
+
+      if (finalLetter === 'Ё') {
+        messageBox.textContent = 'Эх, не повезло';
+        messageBox.style.color = 'red'; 
+      } else {
+        messageBox.textContent = '';
+      }
+
+      wordCountBtn.style.display = 'block';
+      isCountingEnabled = true;
+      wordCountBtn.disabled = false;
+
+      startTimer(seconds, timerBox, btn, stopMsg, wordCountBtn);
+    }
+
+    function startTimer(seconds, timerBox, btn, stopMsg, wordCountBtn) {
+      timerBox.style.display = 'block';
+      let timeLeft = seconds;
+
+      timerInterval = setInterval(() => {
+        timerBox.textContent = timeLeft + ' с';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timerBox.textContent = 'Время вышло!';
+          
+          document.body.style.backgroundColor = '#ff4d4d';
+          stopMsg.style.display = 'block';
+
+          // Запрещаем подсчёт слов
+          isCountingEnabled = false;
+          wordCountBtn.disabled = true;
+
+          stopTimeout = setTimeout(() => {
+            document.body.style.backgroundColor = '#eafaf1';
+            stopMsg.style.display = 'none';
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          timeLeft--;
+        }
+      }, 1000);
     }
   </script>
 </body>
 </html>
+
+
