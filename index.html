@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta name="yandex-verification" content="8c4e65b015b0ab0b" />
+  <meta charset="utf-8">
   <title>Генератор букв</title>
-  <meta name="yandex-verification" content="8c4e65b015b0ab0b" />
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,56 +12,182 @@
       justify-content: center;
       min-height: 100vh;
       margin: 0;
-      background-color: #f0f0f0;
+      background-color: #eafaf1;
+      transition: background-color 0.3s;
+      position: relative;
     }
-    #letter {
-      font-size: 150px;
+    
+    .controls {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 35px;
       font-weight: bold;
-      color: #2c3e50;
+      color: #27ae60;
+    }
+
+    select {
+      padding: 20px 60px;
+      font-size: 40px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    h1 {
+      color: #27ae60;
+      margin-top: -50px;
+      margin-bottom: 40px;
+    }
+
+    #letter {
+      font-size: 300px;
+      font-weight: bold;
+      color: #2ecc71;
       margin: 20px 0;
     }
+
     button {
-      padding: 15px 30px;
-      font-size: 20px;
-      background-color: #3498db;
+      padding: 50px 100px;
+      font-size: 50px;
+      background-color: #27ae60;
       color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
     }
+
     button:hover {
-      background-color: #2980b9;
+      background-color: #219150;
     }
+
     button:disabled {
-      background-color: #bdc3c7;
-      cursor: not-allowed;
+      background-color: #95a5a6;
+    }
+
+    #message {
+      font-size: 40px;       
+      margin-top: 20px;
+      font-weight: bold;
+      text-align: center;
+      color: #333;
+    }
+
+    #timer {
+      font-size: 60px;
+      font-weight: bold;
+      color: #c0392b;
+      margin-top: 15px;
+      display: none;
+    }
+
+    #stop-message {
+      position: fixed;
+      top: 200px;
+      left: 0px;
+      width: 100%;
+      text-align: center;
+      font-size: 70px;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      display: none;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
 
+  <!-- Блок управления (выбор времени) -->
+  <div class="controls">
+    <label for="timerSelect">Длительность таймера:</label>
+    <select id="timerSelect">
+      <option value="5">5  сек</option>
+      <option value="20">20 сек</option>
+      <option value="30" selected>30 сек</option>
+      <option value="60">60 сек</option>
+    </select>
+  </div>
+
+  <div id="stop-message">СТОП</div>
   <h1>Игра в слова</h1>
   <div id="letter">?</div>
   <button id="btn" onclick="startGen()">Сгенерировать букву</button>
+  <div id="message"></div>
+  <div id="timer"></div>
 
   <script>
-    const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
-    const display = document.getElementById('letter');
-    const btn = document.getElementById('btn');
+    let timerInterval;
+    let stopTimeout;
 
     async function startGen() {
+      const btn = document.getElementById('btn');
+      const display = document.getElementById('letter');
+      const messageBox = document.getElementById('message');
+      const timerBox = document.getElementById('timer');
+      const stopMsg = document.getElementById('stop-message');
+      const timerSelect = document.getElementById('timerSelect');
+      const seconds = parseInt(timerSelect.value, 10);
+      const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
+
       btn.disabled = true;
-      
+      messageBox.textContent = '';
+      timerBox.style.display = 'none';
+      timerBox.textContent = '';
+      stopMsg.style.display = 'none';
+      document.body.style.backgroundColor = '#eafaf1';
+      clearInterval(timerInterval);
+      clearTimeout(stopTimeout);
+
       for (let i = 0; i < 8; i++) {
         const rand = Math.floor(Math.random() * letters.length);
         display.textContent = letters[rand];
         await new Promise(r => setTimeout(r, 100));
       }
 
-      const final = Math.floor(Math.random() * letters.length);
-      display.textContent = letters[final];
-      
-      btn.disabled = false;
+      const finalIndex = Math.floor(Math.random() * letters.length);
+      const finalLetter = letters[finalIndex];
+      display.textContent = finalLetter;
+
+      if (finalLetter === 'Е') {
+        messageBox.textContent = 'Эх, не повезло';
+        messageBox.style.color = 'red'; 
+      } else {
+        messageBox.textContent = '';
+      }
+
+      startTimer(seconds, timerBox, btn, stopMsg);
+    }
+
+    function startTimer(seconds, timerBox, btn, stopMsg) {
+      timerBox.style.display = 'block';
+      let timeLeft = seconds;
+
+      timerInterval = setInterval(() => {
+        timerBox.textContent = timeLeft + ' с';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          timerBox.textContent = 'Время вышло!';
+          
+          document.body.style.backgroundColor = '#ff4d4d';
+          stopMsg.style.display = 'block';
+
+          stopTimeout = setTimeout(() => {
+            document.body.style.backgroundColor = '#eafaf1';
+            stopMsg.style.display = 'none';
+            btn.disabled = false;
+          }, 3000);
+        } else {
+          timeLeft--;
+        }
+      }, 1000);
     }
   </script>
 </body>
