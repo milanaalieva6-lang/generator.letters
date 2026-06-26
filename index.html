@@ -15,19 +15,20 @@
       background-color: #eafaf1;
       transition: background-color 0.3s;
       position: relative;
+      cursor: default;
     }
-    
+
     .controls {
       position: absolute;
       top: 20px;
       left: 20px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 15px;
     }
 
     label {
-      font-size: 35px;
+      font-size: 40px;
       font-weight: bold;
       color: #27ae60;
     }
@@ -35,14 +36,14 @@
     select {
       padding: 20px 60px;
       font-size: 40px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
+      border-radius: 8px;
+      border: 2px solid #ccc;
       cursor: pointer;
     }
 
     h1 {
       color: #27ae60;
-      margin-top: -50px;
+      margin-top: -100px;
       margin-bottom: 40px;
     }
 
@@ -53,7 +54,7 @@
       margin: 20px 0;
     }
 
-    button {
+    button.main-btn {
       padding: 50px 100px;
       font-size: 50px;
       background-color: #27ae60;
@@ -63,12 +64,35 @@
       cursor: pointer;
     }
 
-    button:hover {
+    button.main-btn:hover {
       background-color: #219150;
     }
 
-    button:disabled {
+    button.main-btn:disabled {
       background-color: #95a5a6;
+    }
+
+    button.word-count-btn {
+      padding: 50px 100px;
+      font-size: 50px;
+      background-color: white;
+      color: #27ae60;
+      border: 2px solid #27ae60;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 20px;
+      font-weight: bold;
+    }
+
+    button.word-count-btn:hover:not(:disabled) {
+      background-color: #f0f0f0;
+    }
+
+    button.word-count-btn:disabled {
+      background-color: #e0e0e0;
+      color: #888;
+      border-color: #ccc;
+      cursor: not-allowed;
     }
 
     #message {
@@ -89,8 +113,8 @@
 
     #stop-message {
       position: fixed;
-      top: 200px;
-      left: 0px;
+      top: 150px;
+      left: 0;
       width: 100%;
       text-align: center;
       font-size: 70px;
@@ -104,11 +128,10 @@
 </head>
 <body>
 
-  <!-- Блок управления (выбор времени) -->
   <div class="controls">
     <label for="timerSelect">Длительность таймера:</label>
     <select id="timerSelect">
-      <option value="5">5  сек</option>
+      <option value="5">5 сек</option>
       <option value="20">20 сек</option>
       <option value="30" selected>30 сек</option>
       <option value="60">60 сек</option>
@@ -118,13 +141,35 @@
   <div id="stop-message">СТОП</div>
   <h1>Игра в слова</h1>
   <div id="letter">?</div>
-  <button id="btn" onclick="startGen()">Сгенерировать букву</button>
+  <button id="btn" class="main-btn" onclick="startGen()">Сгенерировать букву</button>
+  
+  <button id="wordCountBtn" class="word-count-btn" style="display: none;" onclick="incrementWordCount()">Сказанных слов: 0</button>
+
   <div id="message"></div>
   <div id="timer"></div>
 
   <script>
     let timerInterval;
     let stopTimeout;
+    let wordCount = 0;
+    let isCountingEnabled = false; 
+
+    function updateWordCountButton() {
+      const btn = document.getElementById('wordCountBtn');
+      btn.textContent = 'Сказанных слов: ' + wordCount;
+    }
+
+    function incrementWordCount() {
+      if (!isCountingEnabled) return;
+      wordCount++;
+      updateWordCountButton();
+    }
+
+document.body.addEventListener('click', (e) => {
+      if (e.target.closest('#wordCountBtn')) return;
+
+      incrementWordCount();
+    });
 
     async function startGen() {
       const btn = document.getElementById('btn');
@@ -132,7 +177,9 @@
       const messageBox = document.getElementById('message');
       const timerBox = document.getElementById('timer');
       const stopMsg = document.getElementById('stop-message');
+      const wordCountBtn = document.getElementById('wordCountBtn');
       const timerSelect = document.getElementById('timerSelect');
+      
       const seconds = parseInt(timerSelect.value, 10);
       const letters = 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЭЮЯ'.split('');
 
@@ -145,6 +192,9 @@
       clearInterval(timerInterval);
       clearTimeout(stopTimeout);
 
+      wordCount = 0;
+      updateWordCountButton();
+
       for (let i = 0; i < 8; i++) {
         const rand = Math.floor(Math.random() * letters.length);
         display.textContent = letters[rand];
@@ -155,17 +205,21 @@
       const finalLetter = letters[finalIndex];
       display.textContent = finalLetter;
 
-      if (finalLetter === 'Е') {
+      if (finalLetter === 'Ё') {
         messageBox.textContent = 'Эх, не повезло';
         messageBox.style.color = 'red'; 
       } else {
         messageBox.textContent = '';
       }
 
-      startTimer(seconds, timerBox, btn, stopMsg);
+      wordCountBtn.style.display = 'block';
+      isCountingEnabled = true;
+      wordCountBtn.disabled = false;
+
+      startTimer(seconds, timerBox, btn, stopMsg, wordCountBtn);
     }
 
-    function startTimer(seconds, timerBox, btn, stopMsg) {
+    function startTimer(seconds, timerBox, btn, stopMsg, wordCountBtn) {
       timerBox.style.display = 'block';
       let timeLeft = seconds;
 
@@ -178,6 +232,10 @@
           
           document.body.style.backgroundColor = '#ff4d4d';
           stopMsg.style.display = 'block';
+
+          // Запрещаем подсчёт слов
+          isCountingEnabled = false;
+          wordCountBtn.disabled = true;
 
           stopTimeout = setTimeout(() => {
             document.body.style.backgroundColor = '#eafaf1';
